@@ -1,0 +1,74 @@
+name: SMC-Mixer
+display_name: "SMC Mixer"
+unique_id: "SMC_MIXER_01"
+device_names:
+  windows:
+    input: "SMC-Mixer"
+    output: "SMC-Mixer"
+channels:
+  # Группа 1: Фейдеры (CID 0-7)
+  - {cid: 0, controls: [{func: volume, type: fader, mtype: cc, mid: 40, fb: true}]}
+  - {cid: 1, controls: [{func: volume, type: fader, mtype: cc, mid: 41, fb: true}]}
+  - {cid: 2, controls: [{func: volume, type: fader, mtype: cc, mid: 42, fb: true}]}
+  - {cid: 3, controls: [{func: volume, type: fader, mtype: cc, mid: 43, fb: true}]}
+  - {cid: 4, controls: [{func: volume, type: fader, mtype: cc, mid: 44, fb: true}]}
+  - {cid: 5, controls: [{func: volume, type: fader, mtype: cc, mid: 45, fb: true}]}
+  - {cid: 6, controls: [{func: volume, type: fader, mtype: cc, mid: 46, fb: true}]}
+  - {cid: 7, controls: [{func: volume, type: fader, mtype: cc, mid: 47, fb: true}]}
+
+  # Группа 2: Кнопки Ряд 1 (CID 8-15)
+  - {cid: 8,  controls: [{func: mute, type: button, mtype: note, mid: 16, fb: true}]}
+  - {cid: 9,  controls: [{func: mute, type: button, mtype: note, mid: 17, fb: true}]}
+  - {cid: 10, controls: [{func: mute, type: button, mtype: note, mid: 18, fb: true}]}
+  - {cid: 11, controls: [{func: mute, type: button, mtype: note, mid: 19, fb: true}]}
+  - {cid: 12, controls: [{func: mute, type: button, mtype: note, mid: 20, fb: true}]}
+  - {cid: 13, controls: [{func: mute, type: button, mtype: note, mid: 21, fb: true}]}
+  - {cid: 14, controls: [{func: mute, type: button, mtype: note, mid: 22, fb: true}]}
+  - {cid: 15, controls: [{func: mute, type: button, mtype: note, mid: 23, fb: true}]}
+
+  # Группа 3: Кнопки Ряд 2 (CID 16-23)
+  - {cid: 16, controls: [{func: meter, type: button, mtype: note, mid: 8, fb: true}]}
+  - {cid: 17, controls: [{func: meter, type: button, mtype: note, mid: 9, fb: true}]}
+  - {cid: 18, controls: [{func: meter, type: button, mtype: note, mid: 10, fb: true}]}
+  - {cid: 19, controls: [{func: meter, type: button, mtype: note, mid: 11, fb: true}]}
+  - {cid: 20, controls: [{func: meter, type: button, mtype: note, mid: 12, fb: true}]}
+  - {cid: 21, controls: [{func: meter, type: button, mtype: note, mid: 13, fb: true}]}
+  - {cid: 22, controls: [{func: meter, type: button, mtype: note, mid: 14, fb: true}]}
+  - {cid: 23, controls: [{func: meter, type: button, mtype: note, mid: 15, fb: true}]}
+
+  # Группа 4: Кнопки Ряд 3 (CID 24-31)
+  - {cid: 24, controls: [{func: none, type: button, mtype: note, mid: 0, fb: true}]}
+  - {cid: 25, controls: [{cid: 25, func: none, type: button, mtype: note, mid: 1, fb: true}]}
+  - {cid: 26, controls: [{cid: 26, func: none, type: button, mtype: note, mid: 2, fb: true}]}
+  - {cid: 27, controls: [{cid: 27, func: none, type: button, mtype: note, mid: 3, fb: true}]}
+  - {cid: 28, controls: [{cid: 28, func: none, type: button, mtype: note, mid: 4, fb: true}]}
+  - {cid: 29, controls: [{cid: 29, func: none, type: button, mtype: note, mid: 5, fb: true}]}
+  - {cid: 30, controls: [{cid: 30, func: none, type: button, mtype: note, mid: 6, fb: true}]}
+  - {cid: 31, controls: [{cid: 31, func: none, type: button, mtype: note, mid: 7, fb: true}]}
+
+  # Группа 5: Кнопки Ряд 4 (CID 32-39)
+  - {cid: 32, controls: [{func: status, type: button, mtype: note, mid: 24, fb: true}]}
+  - {cid: 33, controls: [{func: status, type: button, mtype: note, mid: 25, fb: true}]}
+  - {cid: 34, controls: [{func: status, type: button, mtype: note, mid: 26, fb: true}]}
+  - {cid: 35, controls: [{func: status, type: button, mtype: note, mid: 27, fb: true}]}
+  - {cid: 36, controls: [{func: status, type: button, mtype: note, mid: 28, fb: true}]}
+  - {cid: 37, controls: [{func: status, type: button, mtype: note, mid: 29, fb: true}]}
+  - {cid: 38, controls: [{func: status, type: button, mtype: note, mid: 30, fb: true}]}
+  - {cid: 39, controls: [{func: status, type: button, mtype: note, mid: 31, fb: true}]}
+
+  # Группа 6: Кнобы (CID 40-47)
+  - {cid: 40, controls: [{func: volume, type: knob, mtype: cc, mid: 30, fb: true}]}
+  - {cid: 41, controls: [{func: volume, type: knob, mtype: cc, mid: 31, fb: true}]}
+  - {cid: 42, controls: [{func: volume, type: knob, mtype: cc, mid: 32, fb: true}]}
+  - {cid: 43, controls: [{func: volume, type: knob, mtype: cc, mid: 33, fb: true}]}
+  - {cid: 44, controls: [{func: volume, type: knob, mtype: cc, mid: 34, fb: true}]}
+  - {cid: 45, controls: [{func: volume, type: knob, mtype: cc, mid: 35, fb: true}]}
+  - {cid: 46, controls: [{func: volume, type: knob, mtype: cc, mid: 36, fb: true}]}
+  - {cid: 47, controls: [{func: volume, type: knob, mtype: cc, mid: 37, fb: true}]}
+
+shared:
+  - {func: media_play,  type: button, mtype: note, mid: 94, fb: true}
+  - {func: media_pause, type: button, mtype: note, mid: 93, fb: true}
+  - {func: media_record,type: button, mtype: note, mid: 95, fb: true}
+  - {func: media_prev,   type: button, mtype: note, mid: 91, fb: true}
+  - {func: media_next,   type: button, mtype: note, mid: 92, fb: true}
