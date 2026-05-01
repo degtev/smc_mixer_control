@@ -59,6 +59,7 @@ def start():
 
     event_queue = multiprocessing.Queue()
     update_queue = multiprocessing.Queue()
+    osd_queue = multiprocessing.Queue()
     
     if dev_info is None:
         print("SMC Mixer Control device not found. Please ensure your MIDI device is connected and configured in the devices directory.")
@@ -67,16 +68,19 @@ def start():
     dev = Device(dev_info)
     shared_map, channel_map = init_channels(dev)
 
+    import smc_mixer_control.osd as osd
     midi_listener_process = multiprocessing.Process(target = midi_listener.start, args=(event_queue,dev.in_name))
     system_listener_process = multiprocessing.Process(target = system_listener.start, args=(event_queue,))
     systray_process = multiprocessing.Process(target = systray, args=(event_queue, update_queue, len(channel_map.channels.keys())))
+    osd_process = multiprocessing.Process(target = osd.start, args=(osd_queue,))
     
     midi_listener_process.start()
     system_listener_process.start()
     systray_process.start()
+    osd_process.start()
 
     try:
-        event_handler.start(event_queue, dev, shared_map, channel_map, update_queue)
+        event_handler.start(event_queue, dev, shared_map, channel_map, update_queue, osd_queue)
     except (KeyboardInterrupt, SystemExit):
         print("\nStopping SMC Mixer Control...")
     except Exception as e:
@@ -84,7 +88,7 @@ def start():
         raise e
     finally:
         print("Cleaning up processes...")
-        for p in [midi_listener_process, system_listener_process, systray_process]:
+        for p in [midi_listener_process, system_listener_process, systray_process, osd_process]:
             if p.is_alive():
                 p.terminate()
                 p.join(timeout=1)
