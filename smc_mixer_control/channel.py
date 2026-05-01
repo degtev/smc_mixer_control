@@ -247,12 +247,18 @@ class Channel:
         self.target.set_mute(self.mute)
 
     def increment_level(self, inc):
+        old_level = self.level
         new_level = self.level + inc
         if new_level < 0:
             new_level = 0
         elif new_level > 127:
             new_level = 127
+        
+        if old_level == new_level:
+            return False
+            
         self.level = new_level
+        return True
 
     def set_target_from_app_def(self, app_def):
         if app_def is None:

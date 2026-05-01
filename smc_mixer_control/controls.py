@@ -30,18 +30,10 @@ class RotaryEncoder(Control):
     accel: bool = False
 
     def get_increment(self, value):
-        if self.accel:
-            if self.increment_value < value < self.decrement_value:
-                return value-self.increment_value+1
-            if value > self.decrement_value:
-                return 0-(value-self.decrement_value+1)
-
-        if value == self.increment_value:
-            return 1
-        if value == self.decrement_value:
-            return -1
-
-        return 0
+        if value <= 64:
+            return value
+        else:
+            return value - 128
 
 @dataclass
 class Button(Control):

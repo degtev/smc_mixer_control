@@ -4,6 +4,10 @@
 
 ---
 
+<img src="static/demo/interface.jpg">
+
+---
+
 ## 🚀 Key Features
 
 *   **🎧 Granular Volume Control**: Map any running application (Spotify, Discord, Games, etc.) to a physical fader or knob.
@@ -25,8 +29,8 @@
 ### 2. Running from Source
 1.  **Clone the repository**:
     ```powershell
-    git clone https://github.com/yourusername/smc-mixer-control.git
-    cd smc-mixer-control
+    git clone https://github.com/degtev/smc_mixer_control.git
+    cd smc_mixer_control
     ```
 2.  **Create a Virtual Environment**:
     ```powershell
@@ -64,12 +68,16 @@ If you see an error like `error: metadata-generation-failed` or `Unknown compile
 
 ## 🎮 How to Use
 
-### Assigning Applications
-1.  Right-click the **SMC Mixer Control** icon in the system tray.
-2.  Navigate to the **Faders**, **Buttons**, or **Knobs** submenu.
-3.  Select a channel (e.g., `Fader 1`).
-4.  Choose an application from the list to bind it to that control.
-5.  *Tip: Use "Add application..." if the app isn't currently playing audio.*
+### 🖥️ Using the Dashboard
+1.  Open the application; the **Dashboard** will appear (or restore it from the tray icon).
+2.  **Assign Apps**: Click on any Fader, Knob, or Label to open the application picker.
+3.  **Configure Buttons**: Click on any of the four buttons (M, S, R, ▢) next to a fader to set its specific function (Mute, Status, etc.) and target application.
+4.  **Live Visualizer**: Watch the real-time LED grid at the bottom to see your animations and meter activity.
+5.  **Settings**: Click the ⚙ icon in the header to manage MIDI ports and hardware profiles.
+
+### 🖱️ Tray Menu & Quick Actions
+*   Double-click the tray icon to quickly restore the Dashboard.
+*   Right-click to access quick animation switching and preset refreshes.
 
 ### Visual Effects & Animations
 You can change the look of your mixer under the **Visual Effects** menu:
@@ -123,8 +131,3 @@ Contributions make the open-source community an amazing place!
 3. Commit your Changes (`git commit -m 'Add some AmazingFeature'`).
 4. Push to the Branch (`git push origin feature/AmazingFeature`).
 5. Open a Pull Request.
-
----
-
-## ⚖️ License
-Distributed under the MIT License. See `LICENSE` for more information.

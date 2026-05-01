@@ -109,6 +109,21 @@ class Device(object):
                 max=conf.get("max", 127),
                 unset=conf.get("unset", 0)
             )
+        elif conf["type"] == "encoder":
+            mtype = self.inflate(conf["mtype"])
+            m_id_field,m_val_field = self.look_up_fields(mtype)
+            return RotaryEncoder(
+                type=conf["type"],
+                func=conf["func"],
+                midi_type=mtype,
+                midi_id_field=m_id_field,
+                midi_id=conf["mid"],
+                midi_value_field=m_val_field,
+                feedback=conf["fb"],
+                increment_value=conf.get("inc", 1),
+                decrement_value=conf.get("dec", 127),
+                accel=conf.get("accel", False)
+            )
 
     def inflate(self, event_type):
         if event_type == "pw":

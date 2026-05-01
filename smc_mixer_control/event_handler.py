@@ -128,9 +128,10 @@ def start(event_queue, dev, shared_map, channel_map, update_queue, osd_queue):
                 chase_idx = -2
 
             if chase_idx != last_chase_idx or mode != last_mode:
+                led_states = [0] * 32
                 for channel in channel_map.channels.values():
+                    is_on = False
                     if not channel.target:
-                        is_on = False
                         if (mode in ["Fill Horizontal", "Fill Vertical", "Crawl Horizontal", "Crawl Vertical"]) and num_steps > 0:
                             cid = channel.cid
                             if 8 <= cid <= 39:
@@ -170,6 +171,18 @@ def start(event_queue, dev, shared_map, channel_map, update_queue, osd_queue):
                         
                         brightness = 127 if is_on else 0
                         channel.update_leds(dev, idle_brightness=brightness)
+                    
+                    cid = channel.cid
+                    if 8 <= cid <= 39:
+                        idx = cid - 8
+
+                        if is_on:
+                            led_states[idx] = 127
+                        elif channel.target:
+                            pass
+
+                for q in update_queue:
+                    q.put(("led_states", led_states))
                 
                 last_chase_idx = chase_idx
                 last_mode = mode
@@ -192,22 +205,22 @@ def start(event_queue, dev, shared_map, channel_map, update_queue, osd_queue):
 
                 match, value = channel_map.lookup(event)
                 if match is not None:
-                    if match.control.func == "volume" and (match.channel.target is not None or "assign_mod" in active_modes):
-                        if match.control.type in ["fader", "knob"]:
+                    if match.control.func == "volume":
+                        if hasattr(match.control, "normalize_level"):
                             new_level = match.control.normalize_level(value)
                             if match.channel.set_level(new_level):
                                 if match.channel.target:
                                     match.channel.update_target_volume()
                                     _send_osd(match.channel)
                                 match.channel.update_display(dev)
-                        elif match.control.type == "knob":
+                        
+                        if hasattr(match.control, "get_increment"):
                             inc = match.control.get_increment(value)
                             if "assign_mod" in active_modes:
                                 match.channel.change_target(inc)
                                 match.channel.update_display(dev, fader=True)
                                 channel_map.save()
-                            else:
-                                match.channel.increment_level(inc)
+                            elif match.channel.increment_level(inc):
                                 if match.channel.target:
                                     match.channel.update_target_volume()
                                     _send_osd(match.channel)
@@ -235,8 +248,11 @@ def start(event_queue, dev, shared_map, channel_map, update_queue, osd_queue):
                             if match.channel.target:
                                 print(f"Focusing application: {match.channel.target.name}")
                                 wh.focus_application(match.channel.target.name)
+                                match.channel.update_display(dev)
                         
-                        match.channel.update_display(dev)
+                        state = channel_map.get_state()
+                        for q in update_queue:
+                            q.put(("state", state))
                     
                     elif match.control.func == "mute":
                         if match.control.down_value == value:
@@ -361,22 +377,28 @@ def start(event_queue, dev, shared_map, channel_map, update_queue, osd_queue):
                     channel_map.animation_speed = event["speed"]
                     channel_map.animation_speed_name = event["name"]
                     channel_map.save()
+                elif event["action"] == "show_gui":
+                    for q in update_queue:
+                        q.put(("show", {}))
                 elif event["action"] == "request_state":
                     state = channel_map.get_state()
                     apps = wh.get_applications_and_sessions()
                     apps_list = sorted(list(apps.keys()))
-                    update_queue.put(("state", state))
-                    update_queue.put(("apps", apps_list))
+                    for q in update_queue:
+                        q.put(("state", state))
+                        q.put(("apps", apps_list))
                     last_apps_list = apps_list
 
             if event_type in ["interface", "system"]:
                 state = channel_map.get_state()
-                update_queue.put(("state", state))
+                for q in update_queue:
+                    q.put(("state", state))
                 
                 if event_type == "system":
                     apps_list = sorted(list(event["apps"].keys()))
                     if apps_list != sorted(last_apps_list):
-                        update_queue.put(("apps", apps_list))
+                        for q in update_queue:
+                            q.put(("apps", apps_list))
                         last_apps_list = apps_list
 
     except KeyboardInterrupt:

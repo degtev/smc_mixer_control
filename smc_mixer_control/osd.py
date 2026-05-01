@@ -159,6 +159,8 @@ class VolumeOSD:
             self.setup_ui()
             self.check_queue()
             self.root.mainloop()
+        except KeyboardInterrupt:
+            pass
         except Exception as e:
             print(f"OSD Error: {e}")
 
