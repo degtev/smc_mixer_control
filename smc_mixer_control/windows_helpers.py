@@ -7,6 +7,13 @@ from comtypes import CLSCTX_ALL
 from pycaw.pycaw import AudioUtilities, IAudioEndpointVolume, IAudioMeterInformation
 import psutil
 from collections import namedtuple
+import os
+from os.path import join, dirname, realpath, exists, abspath, expanduser
+
+def static_path():
+    import sys
+    base = getattr(sys, '_MEIPASS', dirname(dirname(realpath(__file__))))
+    return join(base, "static")
 
 AppDef = namedtuple("AppDef", ["name", "color", "sessions"])
 

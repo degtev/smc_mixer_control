@@ -5,7 +5,7 @@ import mido
 from smc_mixer_control.target import ApplicationVolume, DeviceVolume, MultiTarget
 import smc_mixer_control.windows_helpers as wh
 
-def start(event_queue, dev, shared_map, channel_map, update_queue):
+def start(event_queue, dev, shared_map, channel_map, update_queue, osd_queue):
     """
     This is the main event handler loop. It listens to the multiprocessing event queue and reacts
     to events based on basic rules. The intent is for this code to be static for all devices, and
@@ -21,7 +21,22 @@ def start(event_queue, dev, shared_map, channel_map, update_queue):
         for channel in channel_map.channels.values():
             channel.update_display(dev, fader=True)
 
-    def _update_target_from_system(channel, target, event, dev, update_display=True):
+    def _send_osd(channel):
+        display_name = channel.name
+        if isinstance(channel.target, MultiTarget):
+            names = [t.name for t in channel.target.targets]
+            clean_names = [n.replace(".exe", "") for n in names]
+            display_name = ", ".join(clean_names)
+        elif channel.name.endswith(".exe"):
+            display_name = channel.name.replace(".exe", "")
+
+        osd_queue.put(("update", {
+            "name": display_name,
+            "volume": channel.level,
+            "mute": channel.mute
+        }))
+
+    def _update_target_from_system(channel, target, event, dev, update_display=True, osd_queue=None):
         if target.name in event["apps"]:
             channel_sessions = set(s.InstanceIdentifier for s in target.sessions)
             app_sessions = set(a["identifier"] for a in event["apps"][target.name])
@@ -31,9 +46,20 @@ def start(event_queue, dev, shared_map, channel_map, update_queue):
                 volume = min(a["level"] for a in event["apps"][target.name])
                 mute = all(bool(a["mute"]) for a in event["apps"][target.name])
                 peak = max(a["peak"] for a in event["apps"][target.name])
+                
+                if mute and volume == 0 and channel.level > 0:
+                    volume = channel.level / 127.0
+                
+                old_level = channel.level
+                old_mute = channel.mute
+                
                 channel.update_status(volume, mute, peak, dev)
+                
                 if update_display:
                     channel.update_display(dev)
+                
+                if osd_queue and (old_level != channel.level or old_mute != channel.mute):
+                    _send_osd(channel)
         elif target.sessions:
             channel.refresh_sessions(dev)
 
@@ -102,9 +128,10 @@ def start(event_queue, dev, shared_map, channel_map, update_queue):
                 chase_idx = -2
 
             if chase_idx != last_chase_idx or mode != last_mode:
+                led_states = [0] * 32
                 for channel in channel_map.channels.values():
+                    is_on = False
                     if not channel.target:
-                        is_on = False
                         if (mode in ["Fill Horizontal", "Fill Vertical", "Crawl Horizontal", "Crawl Vertical"]) and num_steps > 0:
                             cid = channel.cid
                             if 8 <= cid <= 39:
@@ -144,6 +171,18 @@ def start(event_queue, dev, shared_map, channel_map, update_queue):
                         
                         brightness = 127 if is_on else 0
                         channel.update_leds(dev, idle_brightness=brightness)
+                    
+                    cid = channel.cid
+                    if 8 <= cid <= 39:
+                        idx = cid - 8
+
+                        if is_on:
+                            led_states[idx] = 127
+                        elif channel.target:
+                            pass
+
+                for q in update_queue:
+                    q.put(("led_states", led_states))
                 
                 last_chase_idx = chase_idx
                 last_mode = mode
@@ -166,23 +205,25 @@ def start(event_queue, dev, shared_map, channel_map, update_queue):
 
                 match, value = channel_map.lookup(event)
                 if match is not None:
-                    if match.control.func == "volume" and (match.channel.target is not None or "assign_mod" in active_modes):
-                        if match.control.type in ["fader", "knob"]:
+                    if match.control.func == "volume":
+                        if hasattr(match.control, "normalize_level"):
                             new_level = match.control.normalize_level(value)
                             if match.channel.set_level(new_level):
                                 if match.channel.target:
                                     match.channel.update_target_volume()
+                                    _send_osd(match.channel)
                                 match.channel.update_display(dev)
-                        elif match.control.type == "knob":
+                        
+                        if hasattr(match.control, "get_increment"):
                             inc = match.control.get_increment(value)
                             if "assign_mod" in active_modes:
                                 match.channel.change_target(inc)
                                 match.channel.update_display(dev, fader=True)
                                 channel_map.save()
-                            else:
-                                match.channel.increment_level(inc)
+                            elif match.channel.increment_level(inc):
                                 if match.channel.target:
                                     match.channel.update_target_volume()
+                                    _send_osd(match.channel)
                                 match.channel.update_display(dev)
 
                     elif match.control.func == "assign":
@@ -207,13 +248,17 @@ def start(event_queue, dev, shared_map, channel_map, update_queue):
                             if match.channel.target:
                                 print(f"Focusing application: {match.channel.target.name}")
                                 wh.focus_application(match.channel.target.name)
+                                match.channel.update_display(dev)
                         
-                        match.channel.update_display(dev)
+                        state = channel_map.get_state()
+                        for q in update_queue:
+                            q.put(("state", state))
                     
                     elif match.control.func == "mute":
                         if match.control.down_value == value:
                             if match.channel.target:
                                 match.channel.toggle_mute()
+                                _send_osd(match.channel)
                         
                         if value == 0:
                             time.sleep(0.05)
@@ -260,15 +305,19 @@ def start(event_queue, dev, shared_map, channel_map, update_queue):
             if event_type == "system":
                 for channel in channel_map.channels.values():
                     if type(channel.target) == ApplicationVolume:
-                        _update_target_from_system(channel, channel.target, event, dev)
+                        _update_target_from_system(channel, channel.target, event, dev, osd_queue=osd_queue)
                     elif type(channel.target) == MultiTarget:
                         for t in channel.target.targets:
                             if type(t) == ApplicationVolume:
-                                _update_target_from_system(channel, t, event, dev, update_display=False)
+                                _update_target_from_system(channel, t, event, dev, update_display=False, osd_queue=osd_queue)
                         channel.update_display(dev)
                     elif type(channel.target) == DeviceVolume:
                         if channel.target.name == "Master":
+                            old_level = channel.level
+                            old_mute = channel.mute
                             channel.update_status(event["master"]["level"], event["master"]["mute"], event["master"]["peak"], dev)
+                            if old_level != channel.level or old_mute != channel.mute:
+                                _send_osd(channel)
                             channel.update_display(dev)
 
             if event_type == "interface":
@@ -328,22 +377,28 @@ def start(event_queue, dev, shared_map, channel_map, update_queue):
                     channel_map.animation_speed = event["speed"]
                     channel_map.animation_speed_name = event["name"]
                     channel_map.save()
+                elif event["action"] == "show_gui":
+                    for q in update_queue:
+                        q.put(("show", {}))
                 elif event["action"] == "request_state":
                     state = channel_map.get_state()
                     apps = wh.get_applications_and_sessions()
                     apps_list = sorted(list(apps.keys()))
-                    update_queue.put(("state", state))
-                    update_queue.put(("apps", apps_list))
+                    for q in update_queue:
+                        q.put(("state", state))
+                        q.put(("apps", apps_list))
                     last_apps_list = apps_list
 
             if event_type in ["interface", "system"]:
                 state = channel_map.get_state()
-                update_queue.put(("state", state))
+                for q in update_queue:
+                    q.put(("state", state))
                 
                 if event_type == "system":
                     apps_list = sorted(list(event["apps"].keys()))
                     if apps_list != sorted(last_apps_list):
-                        update_queue.put(("apps", apps_list))
+                        for q in update_queue:
+                            q.put(("apps", apps_list))
                         last_apps_list = apps_list
 
     except KeyboardInterrupt:

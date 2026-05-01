@@ -132,9 +132,30 @@ class ChannelMap(object):
         }
         for c in self.channels.values():
             funcs = list(set(ctrl.func for ctrl in c.dev_binding.controls))
+            has_sessions = False
+            if c.target:
+                from smc_mixer_control.target import DeviceVolume, ApplicationVolume, MultiTarget
+                if isinstance(c.target, DeviceVolume):
+                    has_sessions = True
+                elif isinstance(c.target, ApplicationVolume):
+                    has_sessions = len(c.target.sessions) > 0
+                elif isinstance(c.target, MultiTarget):
+                    has_sessions = any(len(t.sessions) > 0 for t in c.target.targets if isinstance(t, ApplicationVolume))
+
+            target_apps = []
+            if c.target:
+                from smc_mixer_control.target import ApplicationVolume, MultiTarget
+                if isinstance(c.target, ApplicationVolume):
+                    target_apps.append(c.target.name)
+                elif isinstance(c.target, MultiTarget):
+                    target_apps = [t.name for t in c.target.targets if isinstance(t, ApplicationVolume)]
+
             state["channels"][c.cid] = {
                 "assigned": bool(c.target),
+                "has_sessions": has_sessions,
                 "name": c.name,
+                "target_apps": target_apps,
+                "level": c.level,
                 "mute": c.mute,
                 "peak": c.peak,
                 "funcs": funcs

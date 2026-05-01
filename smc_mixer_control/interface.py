@@ -92,7 +92,34 @@ def get_config():
     """
     Prompts the user on the command-line for a device config file and, if necessary, input and
     output devices if the entries in the device config file don't match any connected midi devices.
+    Now also checks for a saved config from the GUI.
     """
+    abs_home = os.path.abspath(os.path.expanduser("~"))
+    config_path = os.path.join(abs_home, ".smc_mixer_control", "midi_config.json")
+    
+    if os.path.exists(config_path):
+        import json
+        try:
+            with open(config_path, 'r') as f:
+                c = json.load(f)
+            
+            profile = c.get('profile')
+            input_dev = c.get('input')
+            output_dev = c.get('output')
+            
+            if profile and input_dev and output_dev:
+                devices_path = os.path.join(static_path(), "devices")
+                if profile.startswith("custom/"):
+                    path = os.path.join(abs_home, ".smc_mixer_control", profile)
+                else:
+                    path = os.path.join(devices_path, profile)
+                
+                if os.path.exists(path):
+                    print(f"Using saved config: {profile}, In: {input_dev}, Out: {output_dev}")
+                    return {"device": path, "input": input_dev, "output": output_dev}
+        except:
+            pass
+
     inputs = mido.get_input_names()
     outputs = mido.get_output_names()
 
@@ -276,55 +303,9 @@ class MenuItems(object):
 
     def __call__(self, arg1=None, arg2=None, arg3=None):
         mi = []
-        
         mi.append(MenuItem("SMC Mixer Control", lambda: None, enabled=False))
         mi.append(MenuItem("---", lambda: None))
-
-        faders_menu = []
-        for i in range(8):
-            if i < self.app_state.num_channels:
-                faders_menu.append(MenuItem(FaderMenuItem(i, self.app_state), Menu(
-                    MenuItem(AssignMenuItem(i, self.app_state), Menu(AppMenu(i, self.app_state))),
-                    MenuItem("Add application...", Menu(AddAppMenu(i, self.app_state))),
-                    MenuItem("Unassign", UnassignAction(i, self.app_state))
-                )))
-        mi.append(MenuItem("Faders", Menu(*faders_menu)))
-
-        buttons_menu = []
-        for i in range(8, 40):
-            if i < self.app_state.num_channels:
-                buttons_menu.append(MenuItem(FaderMenuItem(i, self.app_state), Menu(
-                    MenuItem(AssignMenuItem(i, self.app_state), Menu(AppMenu(i, self.app_state))),
-                    MenuItem("Add application...", Menu(AddAppMenu(i, self.app_state))),
-                    MenuItem("Unassign", UnassignAction(i, self.app_state))
-                )))
-        mi.append(MenuItem("Buttons", Menu(*buttons_menu)))
-
-        knobs_menu = []
-        for i in range(40, 48):
-            if i < self.app_state.num_channels:
-                knobs_menu.append(MenuItem(FaderMenuItem(i, self.app_state), Menu(
-                    MenuItem(AssignMenuItem(i, self.app_state), Menu(AppMenu(i, self.app_state))),
-                    MenuItem("Add application...", Menu(AddAppMenu(i, self.app_state))),
-                    MenuItem("Unassign", UnassignAction(i, self.app_state))
-                )))
-        mi.append(MenuItem("Knobs", Menu(*knobs_menu)))
-
-        mi.append(MenuItem("---", lambda: None))
-        
-        visuals_menu = [
-            MenuItem("Mode", Menu(AnimationMenu(self.app_state))),
-            MenuItem("Speed", Menu(AnimationSpeedMenu(self.app_state)))
-        ]
-        mi.append(MenuItem("Visual Effects", Menu(*visuals_menu)))
-
-        tools_menu = [
-            MenuItem("Open Config Folder", lambda: os.startfile(os.path.join(os.path.abspath(os.path.expanduser("~")), ".smc_mixer_control"))),
-            MenuItem("Refresh Apps", lambda: self.app_state.event_queue.put(("interface", {"action": "refresh_apps"})))
-        ]
-        mi.append(MenuItem("Tools", Menu(*tools_menu)))
-
-        mi.append(MenuItem("---", lambda: None))
+        mi.append(MenuItem("Dashboard", lambda: self.app_state.event_queue.put(("interface", {"action": "show_gui"})), default=True))
         mi.append(MenuItem("Quit", lambda : self.app_state.event_queue.put(("interface", {"action": "quit"}))))
         return mi
 
