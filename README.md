@@ -2,6 +2,8 @@
 
 **SMC Mixer Control** is a professional, open-source Windows audio management utility designed specifically for MIDI controllers. It bridges the gap between your physical MIDI hardware and the Windows Volume Mixer, allowing you to control individual application volumes, system sounds, and output devices with precision and style.
 
+*Inspired by the amazing [MIDI Mixer](https://www.midi-mixer.com/) project.*
+
 ---
 
 <img src="static/demo/interface.jpg">
