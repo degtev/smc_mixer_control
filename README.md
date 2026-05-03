@@ -1,6 +1,7 @@
 # <img src="static/images/tray_128.png" height="32"> SMC Mixer Control
 
 **SMC Mixer Control** is a free and open-source Windows application for MIDI controllers. It lets you control the volume of any running Windows application (Spotify, Discord, games, browser) with physical faders, knobs and buttons. The app turns your M-VAVE SMC-Mixer into a professional desktop volume mixer, offering real-time LED feedback, 11 animation modes, and automatic app assignment. Written in Python, it requires no coding to configure — just a YAML file for new devices.
+
 *Inspired by the amazing [MIDI Mixer](https://www.midi-mixer.com/) project.*
 
 ---
